@@ -6,20 +6,21 @@ import matplotlib.pyplot as plt
 from multiprocessing import Pool
 
 # Parameters
-naca_codes = [f"{i:04}" for i in np.arange(1,30)]  # NACA airfoils 0000 to 9999
+naca_codes = [f"{i:04}" for i in np.arange(1,10)]  # NACA airfoils 0000 to 9999
 mach = 10 / 340 # Mach number
 reynolds = 67680  # Reynolds number
 alpha_range = (0, 15)  # AoA range
-alpha_step = 1 # Step between two alphas
+alpha_step = 0.5 # Step between two alphas
 
 # Path to XFOIL
-xfoil_path = "xfoil" # If reachable from path
+xfoil_path = "./../../lib/xfoil/xfoil.exe"
+
+# Path to XFOIL command template
+template_path = './template_script.txt'
 
 # Output folders
-polars_folder = "./polars/"
+polars_folder = './polars/'
 output_folder = './output/'
-os.makedirs(polars_folder, exist_ok=True)
-os.makedirs(output_folder, exist_ok=True)
 
 # Score weights
 endurance_score_weights = {'CL': 0.4, 'CD': -0.5, 'CL/CD': 1, 'CM': -0.3}
@@ -28,8 +29,21 @@ payload_score_weights = {'CL': 1, 'CD': -0.2, 'CL/CD': 0.6, 'CM': -0.1}
 # Number of best airfoils' polars to plot
 plots_count = 10
 
+# Processes to run in parallel
+num_processes = 5
+
+# Process timeout timer (in seconds)
+timeout = 30
+
+# Set working directory
+os.chdir(os.path.dirname(os.path.abspath(__file__)))
+
+# Output folders creation
+os.makedirs(polars_folder, exist_ok=True)
+os.makedirs(output_folder, exist_ok=True)
+
 # Template for XFOIL input
-with open('template_script.txt', 'r') as file:
+with open(template_path, 'r') as file:
     template_script = file.read()
 
 # Function to run XFOIL for a single airfoil
@@ -56,6 +70,19 @@ def run_xfoil(naca_code):
         return (naca_code, data)
     else:
         print("No data found.")
+        return (naca_code, None)
+
+def run_xfoil_with_timeout(naca_code, script):
+    try:
+        result = subprocess.run(
+            [xfoil_path],
+            input=script.encode(),
+            capture_output=True,
+            timeout=timeout
+        )
+        return parse_polar_file(naca_code)
+    except subprocess.TimeoutExpired:
+        print(f"XFOIL timed out for NACA {naca_code}")
         return (naca_code, None)
 
 # Function to parse polar data
@@ -94,8 +121,8 @@ def parse_polar_file(filename):
 
 # Run simulations in parallel
 def main():
-    with Pool() as pool:
-        results = pool.map(run_xfoil, naca_codes)
+    with Pool(num_processes) as pool:
+        results = pool.map(run_xfoil_with_timeout, naca_codes)
     
     all_data = {code: data for code, data in results if data is not None}
     
