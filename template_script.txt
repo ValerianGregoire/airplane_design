@@ -1,0 +1,12 @@
+PLOP
+G
+
+NACA{code}
+OPER
+VISC {reynolds}
+MACH {mach}
+ITER 100
+PACC
+{output}
+
+AS {a1} {a2} {step}
