@@ -61,7 +61,18 @@ def run_xfoil(naca_code):
     with open(script_file, 'w') as file:
         file.write(script)
     
-    subprocess.run([xfoil_path], input=script.encode(), capture_output=True)
+    try:
+        # Run XFOIL with timeout
+        subprocess.run([xfoil_path], input=script.encode(), capture_output=True, timeout=timeout)
+    except subprocess.TimeoutExpired:
+        print(f"XFOIL timed out for NACA {naca_code}")
+        try:
+            os.remove(polar_file)
+            os.remove(script_file)
+        except:
+            pass
+
+        return (naca_code, None)
     
     if os.path.exists(polar_file):
         data = parse_polar_file(polar_file)
@@ -72,24 +83,11 @@ def run_xfoil(naca_code):
         print("No data found.")
         return (naca_code, None)
 
-def run_xfoil_with_timeout(naca_code, script):
-    try:
-        result = subprocess.run(
-            [xfoil_path],
-            input=script.encode(),
-            capture_output=True,
-            timeout=timeout
-        )
-        return parse_polar_file(naca_code)
-    except subprocess.TimeoutExpired:
-        print(f"XFOIL timed out for NACA {naca_code}")
-        return (naca_code, None)
-
 # Function to parse polar data
 def parse_polar_file(filename):
     with open(filename, 'r') as file:
         lines = file.readlines()
-    
+
     data = []
     parsing = False
     for line in lines:
@@ -102,7 +100,7 @@ def parse_polar_file(filename):
                 data.append(values)
             except ValueError:
                 continue
-    
+
     df = pd.DataFrame(data, columns=['Alpha', 'CL', 'CD', 'CDp', 'CM', 'Top_Xtr', 'Bot_Xtr'])
     df['CL/CD'] = df['CL'] / df['CD']
 
@@ -122,7 +120,7 @@ def parse_polar_file(filename):
 # Run simulations in parallel
 def main():
     with Pool(num_processes) as pool:
-        results = pool.map(run_xfoil_with_timeout, naca_codes)
+        results = pool.map(run_xfoil, naca_codes)
     
     all_data = {code: data for code, data in results if data is not None}
     
