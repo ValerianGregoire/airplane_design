@@ -1,3 +1,6 @@
+__author__ = "Valerian Gregoire--Begranger"
+__year__ = 2025
+
 import os
 import subprocess
 import pandas as pd
@@ -6,11 +9,11 @@ import matplotlib.pyplot as plt
 from multiprocessing import Pool
 
 # Parameters
-naca_codes = [f"{i:04}" for i in np.arange(1,10)]  # NACA airfoils 0000 to 9999
+naca_codes = [f"{i:04}" for i in np.arange(10,5000,100)]  # NACA airfoils 0010 to 4910
 mach = 10 / 340 # Mach number
 reynolds = 67680  # Reynolds number
-alpha_range = (0, 15)  # AoA range
-alpha_step = 0.5 # Step between two alphas
+alpha_range = (-5, 15)  # AoA range
+alpha_step = 1 # Step between two alphas
 
 # Path to XFOIL
 xfoil_path = "./../../lib/xfoil/xfoil.exe"
@@ -33,7 +36,7 @@ plots_count = 10
 num_processes = 5
 
 # Process timeout timer (in seconds)
-timeout = 30
+timeout = 25
 
 # Set working directory
 os.chdir(os.path.dirname(os.path.abspath(__file__)))
