@@ -19,7 +19,7 @@ alpha_step = 1 # Step between two alphas
 xfoil_path = "./../../lib/xfoil/xfoil.exe"
 
 # Path to XFOIL command template
-template_path = './template_script.txt'
+template_path = '../../lib/xfoil_script.txt'
 
 # Output folders
 polars_folder = './polars/'

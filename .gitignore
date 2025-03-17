@@ -1,3 +1,4 @@
 # Ignore output folders
 /src/airfoils_comparison/output/
 /src/airfoils_comparison/polars/
+/src/sizing_tool/
